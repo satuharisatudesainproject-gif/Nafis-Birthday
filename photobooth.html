@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Nafis Booth - Kolase 4:3</title>
+    <style>
+        :root { --pink: #ff4757; --soft: #fff0f5; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--soft); text-align: center; margin: 0; padding: 20px; }
+        .booth-wrapper { display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; margin-top: 20px; }
+        .preview-box { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 420px; }
+        .cam-frame { position: relative; width: 100%; height: 236px; background: #000; border-radius: 12px; overflow: hidden; border: 3px solid var(--pink); }
+        video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        .result-box { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        canvas { height: 650px; border-radius: 8px; border: 4px solid #eee; background: #fff; }
+        #timer { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 80px; color: white; font-weight: bold; z-index: 10; text-shadow: 0 0 20px #000; display: none; }
+        button { background: var(--pink); color: white; border: none; padding: 15px 45px; border-radius: 50px; font-weight: bold; font-size: 20px; cursor: pointer; margin-top: 20px; box-shadow: 0 5px 0 #d63031; }
+        button:disabled { background: #ccc; box-shadow: none; }
+    </style>
+</head>
+<body>
+
+    <h1 style="color: var(--pink);">🌸 NAFIS' BIRTHDAY BOOTH 🌸</h1>
+    
+    <div class="booth-wrapper">
+        <div class="preview-box">
+            <div class="cam-frame">
+                <video id="video" autoplay playsinline></video>
+                <div id="timer">3</div>
+            </div>
+            <button id="snapBtn">START 3 POSES</button>
+            <p id="status" style="margin-top:15px; font-weight:bold; color: #555;">Jepret 3x baru jadi kolase! ✨</p>
+        </div>
+        <div class="result-box">
+            <canvas id="canvas"></canvas>
+            <p style="font-size: 11px; color: #888; margin-top:10px;">Klik Kanan > Save Image As</p>
+        </div>
+    </div>
+
+    <img id="frameImg" src="frame.png" style="display:none;">
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const frameImg = document.getElementById('frameImg');
+        const snapBtn = document.getElementById('snapBtn');
+        const status = document.getElementById('status');
+        const timerEl = document.getElementById('timer');
+
+        let photos = []; // Tempat nyimpen 3 foto sementara
+
+        frameImg.onload = () => {
+            canvas.width = frameImg.naturalWidth;
+            canvas.height = frameImg.naturalHeight;
+            resetCanvas();
+        };
+
+        function resetCanvas() {
+            ctx.fillStyle = "white";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(frameImg, 0, 0); 
+        }
+
+        navigator.mediaDevices.getUserMedia({ video: true }).then(s => video.srcObject = s);
+
+        snapBtn.onclick = async () => {
+            snapBtn.disabled = true;
+            photos = []; // Reset foto lama
+            resetCanvas();
+
+            // 1. FOTO DULU 3 KALI
+            for (let i = 0; i < 3; i++) {
+                status.innerText = `Pose ke-${i+1}...`;
+                await startTimer(3);
+                
+                // Simpan tiap foto dalam ukuran 4:3 murni
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = 800; 
+                tempCanvas.height = 600; // Rasio 4:3 (800/600 = 1.33)
+                const tCtx = tempCanvas.getContext('2d');
+                
+                // Mirroring
+                tCtx.translate(tempCanvas.width, 0);
+                tCtx.scale(-1, 1);
+                
+                // Crop kamera biar tetep 4:3 (Anti-Gepeng)
+                const vw = video.videoWidth;
+                const vh = video.videoHeight;
+                const sw = vh * (4/3);
+                const sx = (vw - sw) / 2;
+                tCtx.drawImage(video, sx, 0, sw, vh, 0, 0, 800, 600);
+                
+                photos.push(tempCanvas);
+                
+                // Preview instan biar Teteh tau fotonya udah masuk
+                drawCollage();
+            }
+
+            status.innerText = "KOLASE JADI! 😍";
+            snapBtn.disabled = false;
+        };
+
+        function drawCollage() {
+            ctx.fillStyle = "white";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 2. SUSUN KOLASE MEPET 3 KEBAWAH
+            // Kita hitung ukurannya agar memenuhi lebar frame tapi ga numpuk
+            const targetW = canvas.width * 0.94; // Mepet kanan kiri
+            const targetH = targetW * (3/4);   // Tetap 4:3
+            const startX = (canvas.width - targetW) / 2;
+            
+            // Jarak antar foto (Gap) biar ga numpuk
+            const gap = 20; 
+            const startY = 35; // Mulai dari atas oval pertama
+
+            photos.forEach((img, index) => {
+                const yPos = startY + (index * (targetH + gap));
+                ctx.drawImage(img, startX, yPos, targetW, targetH);
+            });
+
+            // 3. TERAKHIR TEMPEL FRAME (PASTI PAS)
+            ctx.drawImage(frameImg, 0, 0);
+        }
+
+        function startTimer(sec) {
+            return new Promise(res => {
+                let c = sec;
+                timerEl.innerText = c;
+                timerEl.style.display = 'block';
+                const t = setInterval(() => {
+                    c--; timerEl.innerText = c;
+                    if(c <= 0) { clearInterval(t); timerEl.style.display = 'none'; res(); }
+                }, 1000);
+            });
+        }
+    </script>
+</body>
+</html>
