@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Nafis Booth - FIXED DOWNLOAD</title>
+    <title>Nafis Booth - Tombol Download</title>
     <style>
         :root { --pink: #ff4757; --soft: #fff0f5; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--soft); text-align: center; margin: 0; padding: 20px; }
@@ -14,12 +14,9 @@
         canvas { height: 650px; border-radius: 8px; border: 4px solid #eee; background: #fff; }
         #timer { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 80px; color: white; font-weight: bold; z-index: 10; text-shadow: 0 0 20px #000; display: none; }
         
-        /* Tombol Start */
-        #snapBtn { background: var(--pink); color: white; border: none; padding: 15px 40px; border-radius: 50px; font-weight: bold; font-size: 18px; cursor: pointer; margin-top: 20px; box-shadow: 0 5px 0 #d63031; }
-        
-        /* Tombol Download (Dipaksa muncul terus) */
-        #downloadBtn { background: #2ed573; color: white; border: none; padding: 15px 40px; border-radius: 50px; font-weight: bold; font-size: 18px; cursor: pointer; margin-top: 20px; box-shadow: 0 5px 0 #26af61; display: block; margin: 20px auto; }
-        
+        button { color: white; border: none; padding: 15px 40px; border-radius: 50px; font-weight: bold; font-size: 18px; cursor: pointer; margin-top: 20px; transition: 0.3s; }
+        #snapBtn { background: var(--pink); box-shadow: 0 5px 0 #d63031; }
+        #downloadBtn { background: #2ed573; box-shadow: 0 5px 0 #26af61; display: none; margin: 20px auto; text-decoration: none; }
         button:disabled { background: #ccc !important; box-shadow: none !important; }
     </style>
 </head>
@@ -27,16 +24,15 @@
 
     <h1 style="color: var(--pink);">🌸 NAFIS' BIRTHDAY BOOTH 🌸</h1>
     
-    <button id="downloadBtn">DOWNLOAD HASIL FOTO 📥</button>
-
     <div class="booth-wrapper">
         <div class="preview-box">
             <div class="cam-frame">
                 <video id="video" autoplay playsinline></video>
                 <div id="timer">3</div>
             </div>
-            <button id="snapBtn">MULAI 3 POSE</button>
-            <p id="status" style="margin-top:15px; font-weight:bold; color: #555;">Klik Start dulu ya!</p>
+            <button id="snapBtn">START 3 POSES</button>
+            <button id="downloadBtn">DOWNLOAD FOTO 📥</button>
+            <p id="status" style="margin-top:15px; font-weight:bold; color: #555;">Klik Start untuk mulai!</p>
         </div>
         <div class="result-box">
             <canvas id="canvas"></canvas>
@@ -73,6 +69,7 @@
 
         snapBtn.onclick = async () => {
             snapBtn.disabled = true;
+            downloadBtn.style.display = 'none';
             photos = []; 
             resetCanvas();
 
@@ -97,8 +94,9 @@
                 drawCollage();
             }
 
-            status.innerText = "KOLASE JADI! 😍 SIAP DOWNLOAD";
+            status.innerText = "KOLASE JADI! 😍";
             snapBtn.disabled = false;
+            downloadBtn.style.display = 'block'; // Munculkan tombol hijau
         };
 
         function drawCollage() {
@@ -129,13 +127,12 @@
             });
         }
 
-        // JURUS DOWNLOAD
+        // FUNGSI DOWNLOAD MANUAL (Paling Aman)
         downloadBtn.onclick = () => {
-            const data = canvas.toDataURL('image/png');
-            const a = document.createElement('a');
-            a.href = data;
-            a.download = 'Photobooth-Nafis.png';
-            a.click();
+            const link = document.createElement('a');
+            link.download = 'Nafis-Photobooth.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
         };
     </script>
 </body>
