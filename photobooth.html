@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Nafis Booth - FIXED DOWNLOAD</title>
+    <style>
+        :root { --pink: #ff4757; --soft: #fff0f5; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--soft); text-align: center; margin: 0; padding: 20px; }
+        .booth-wrapper { display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; margin-top: 20px; }
+        .preview-box { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 420px; }
+        .cam-frame { position: relative; width: 100%; height: 236px; background: #000; border-radius: 12px; overflow: hidden; border: 3px solid var(--pink); }
+        video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        .result-box { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        canvas { height: 650px; border-radius: 8px; border: 4px solid #eee; background: #fff; }
+        #timer { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 80px; color: white; font-weight: bold; z-index: 10; text-shadow: 0 0 20px #000; display: none; }
+        
+        /* Tombol Start */
+        #snapBtn { background: var(--pink); color: white; border: none; padding: 15px 40px; border-radius: 50px; font-weight: bold; font-size: 18px; cursor: pointer; margin-top: 20px; box-shadow: 0 5px 0 #d63031; }
+        
+        /* Tombol Download (Dipaksa muncul terus) */
+        #downloadBtn { background: #2ed573; color: white; border: none; padding: 15px 40px; border-radius: 50px; font-weight: bold; font-size: 18px; cursor: pointer; margin-top: 20px; box-shadow: 0 5px 0 #26af61; display: block; margin: 20px auto; }
+        
+        button:disabled { background: #ccc !important; box-shadow: none !important; }
+    </style>
+</head>
+<body>
+
+    <h1 style="color: var(--pink);">🌸 NAFIS' BIRTHDAY BOOTH 🌸</h1>
+    
+    <button id="downloadBtn">DOWNLOAD HASIL FOTO 📥</button>
+
+    <div class="booth-wrapper">
+        <div class="preview-box">
+            <div class="cam-frame">
+                <video id="video" autoplay playsinline></video>
+                <div id="timer">3</div>
+            </div>
+            <button id="snapBtn">MULAI 3 POSE</button>
+            <p id="status" style="margin-top:15px; font-weight:bold; color: #555;">Klik Start dulu ya!</p>
+        </div>
+        <div class="result-box">
+            <canvas id="canvas"></canvas>
+        </div>
+    </div>
+
+    <img id="frameImg" src="frame.png" style="display:none;">
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const frameImg = document.getElementById('frameImg');
+        const snapBtn = document.getElementById('snapBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const status = document.getElementById('status');
+        const timerEl = document.getElementById('timer');
+
+        let photos = []; 
+
+        frameImg.onload = () => {
+            canvas.width = frameImg.naturalWidth;
+            canvas.height = frameImg.naturalHeight;
+            resetCanvas();
+        };
+
+        function resetCanvas() {
+            ctx.fillStyle = "white";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(frameImg, 0, 0); 
+        }
+
+        navigator.mediaDevices.getUserMedia({ video: true }).then(s => video.srcObject = s);
+
+        snapBtn.onclick = async () => {
+            snapBtn.disabled = true;
+            photos = []; 
+            resetCanvas();
+
+            for (let i = 0; i < 3; i++) {
+                status.innerText = `Pose ke-${i+1}...`;
+                await startTimer(3);
+                
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = 800; 
+                tempCanvas.height = 600; 
+                const tCtx = tempCanvas.getContext('2d');
+                tCtx.translate(tempCanvas.width, 0);
+                tCtx.scale(-1, 1);
+                
+                const vw = video.videoWidth;
+                const vh = video.videoHeight;
+                const sw = vh * (4/3);
+                const sx = (vw - sw) / 2;
+                tCtx.drawImage(video, sx, 0, sw, vh, 0, 0, 800, 600);
+                
+                photos.push(tempCanvas);
+                drawCollage();
+            }
+
+            status.innerText = "KOLASE JADI! 😍 SIAP DOWNLOAD";
+            snapBtn.disabled = false;
+        };
+
+        function drawCollage() {
+            ctx.fillStyle = "white";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            const targetW = canvas.width * 0.94; 
+            const targetH = targetW * (3/4);   
+            const startX = (canvas.width - targetW) / 2;
+            const gap = 20; 
+            const startY = 35; 
+
+            photos.forEach((img, index) => {
+                const yPos = startY + (index * (targetH + gap));
+                ctx.drawImage(img, startX, yPos, targetW, targetH);
+            });
+            ctx.drawImage(frameImg, 0, 0);
+        }
+
+        function startTimer(sec) {
+            return new Promise(res => {
+                let c = sec;
+                timerEl.innerText = c;
+                timerEl.style.display = 'block';
+                const t = setInterval(() => {
+                    c--; timerEl.innerText = c;
+                    if(c <= 0) { clearInterval(t); timerEl.style.display = 'none'; res(); }
+                }, 1000);
+            });
+        }
+
+        // JURUS DOWNLOAD
+        downloadBtn.onclick = () => {
+            const data = canvas.toDataURL('image/png');
+            const a = document.createElement('a');
+            a.href = data;
+            a.download = 'Photobooth-Nafis.png';
+            a.click();
+        };
+    </script>
+</body>
+</html>
